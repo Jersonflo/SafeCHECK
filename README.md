@@ -4,6 +4,12 @@ SafeCHECK es una aplicación de escritorio multiplataforma desarrollada en **Pyt
 
 Proyecto personal de visión por computador aplicada a la seguridad industrial.
 
+![Demo de SafeCHECK detectando en vivo a una persona sin casco](docs/img/demo.gif)
+
+| Menú principal | Monitoreo en vivo |
+|---|---|
+| ![Menú principal](docs/img/menu.png) | ![Monitoreo en vivo](docs/img/monitoreo.png) |
+
 ---
 
 ## 🚀 Características

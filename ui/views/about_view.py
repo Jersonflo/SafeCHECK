@@ -1,10 +1,10 @@
 """
 ui/views/about_view.py
 ======================
-Vista de "Acerca de Nosotros".
+Vista "Acerca del Proyecto".
 
-Presenta información sobre INGELAM (misión, visión, servicios, valores)
-de forma estética y organizada en tarjetas profesionales (sin imágenes).
+Presenta qué es SafeCHECK, cómo funciona, su stack tecnológico y su autor,
+organizado en tarjetas (sin imágenes).
 """
 
 from __future__ import annotations
@@ -21,9 +21,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from config import CONFIG
+
 
 class _AboutCard(QFrame):
-    """Tarjeta informativa para las secciones de Acerca de Nosotros."""
+    """Tarjeta informativa para las secciones de Acerca del Proyecto."""
 
     def __init__(self, icon: str, title: str, content: str, highlight: bool = False, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -65,7 +67,7 @@ class _AboutCard(QFrame):
 
 class AboutView(QWidget):
     """
-    Vista de Acerca de Nosotros.
+    Vista de Acerca del Proyecto.
 
     Señales:
         go_home: Usuario desea regresar al menú principal.
@@ -89,7 +91,7 @@ class AboutView(QWidget):
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(20, 0, 20, 0)
 
-        title = QLabel("🏢  Acerca de INGELAM")
+        title = QLabel("💡  Acerca del Proyecto")
         title.setStyleSheet("font-size: 16px; font-weight: bold; color: #F0F6FC;")
 
         header_layout.addWidget(title)
@@ -109,59 +111,41 @@ class AboutView(QWidget):
 
         # Intro destacada
         card_intro = _AboutCard(
-            icon="⚡",
-            title="INGELAM S.A.S.",
-            content="Somos desarrolladores de ingeniería especializados en la automatización de procesos industriales e integración de tecnologías inteligentes para optimizar la seguridad y productividad empresarial.",
+            icon="⛑️",
+            title="SafeCHECK",
+            content="Sistema de visión por computador que vigila en tiempo real si las personas en una obra o planta llevan casco de seguridad. Analiza varias cámaras a la vez y marca en rojo a quien no lo tiene puesto.",
             highlight=True,
         )
 
-        # Quiénes Somos
-        card_who = _AboutCard(
-            icon="👥",
-            title="Quiénes Somos",
-            content="INGELAM es una empresa consolidada en el sector industrial, dedicada al diseño y ejecución de proyectos de ingeniería electrónica, eléctrica y de sistemas. A través de SafeCHECK, introducimos la Inteligencia Artificial y Visión por Computadora al control de seguridad en obras y plantas de producción.",
+        # Cómo funciona
+        card_how = _AboutCard(
+            icon="⚙️",
+            title="Cómo Funciona",
+            content="• Cada cámara tiene su propio hilo de captura, así el video se muestra en vivo sin acumular retraso.\n"
+                    "• Un modelo YOLOv8 entrenado con dos clases (casco / no-casco) analiza el fotograma más reciente en un hilo aparte.\n"
+                    "• Los recuadros y el estado de cada cámara se actualizan sobre el video en vivo.\n"
+                    "• Usa GPU NVIDIA si está disponible y, si no, corre en CPU.",
         )
 
-        # Misión
-        card_mission = _AboutCard(
-            icon="🎯",
-            title="Nuestra Misión",
-            content="Proveer soluciones integrales de automatización y seguridad industrial basadas en tecnología de punta. Nos enfocamos en maximizar la eficiencia productiva de nuestros clientes mientras resguardamos la integridad física de sus colaboradores mediante sistemas activos de monitoreo.",
+        # Tecnologías
+        card_stack = _AboutCard(
+            icon="🧰",
+            title="Tecnologías",
+            content="Python · YOLOv8 (Ultralytics) · PyTorch · OpenCV · PyQt6",
         )
 
-        # Visión
-        card_vision = _AboutCard(
-            icon="🔭",
-            title="Nuestra Visión",
-            content="Consolidarnos en el mercado regional como la compañía líder en integración de sistemas inteligentes de seguridad y automatización industrial, siendo reconocidos por la innovación, calidad de servicio y compromiso ético con la prevención de riesgos.",
-        )
-
-        # Servicios
-        card_services = _AboutCard(
-            icon="🛠️",
-            title="Servicios y Líneas de Trabajo",
-            content="• Monitoreo de seguridad activa en tiempo real con Inteligencia Artificial.\n"
-                    "• Diseño e integración de tableros de control y automatización industrial.\n"
-                    "• Programación de PLCs, interfaces HMI y sistemas SCADA de control centralizado.\n"
-                    "• Consultoría e ingeniería de detalle para modernización de plantas.",
-        )
-
-        # Valores
-        card_values = _AboutCard(
-            icon="🛡️",
-            title="Valores Corporativos",
-            content="• Innovación: Buscamos siempre soluciones a la vanguardia de la tecnología.\n"
-                    "• Seguridad: Protegemos la vida e integridad del talento humano por sobre todas las cosas.\n"
-                    "• Calidad: Ofrecemos excelencia técnica y confiabilidad en cada uno de nuestros desarrollos.\n"
-                    "• Compromiso: Trabajamos con transparencia, responsabilidad y rigor profesional.",
+        # Autor
+        card_author = _AboutCard(
+            icon="👤",
+            title="Autor",
+            content=f"Proyecto personal desarrollado por {CONFIG.AUTHOR}.\n"
+                    "Código fuente: github.com/Jersonflo/SafeCHECK",
         )
 
         container_layout.addWidget(card_intro)
-        container_layout.addWidget(card_who)
-        container_layout.addWidget(card_mission)
-        container_layout.addWidget(card_vision)
-        container_layout.addWidget(card_services)
-        container_layout.addWidget(card_values)
+        container_layout.addWidget(card_how)
+        container_layout.addWidget(card_stack)
+        container_layout.addWidget(card_author)
         container_layout.addStretch()
 
         scroll.setWidget(container)
@@ -176,7 +160,7 @@ class AboutView(QWidget):
 
         back_btn = QPushButton("⬅  Regresar al Menú")
         back_btn.setObjectName("btn-secondary")
-        back_btn.setFixedHeight(38)
+        back_btn.setMinimumHeight(40)
         back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         back_btn.clicked.connect(self.go_home)
 

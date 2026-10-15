@@ -4,8 +4,8 @@ ui/views/home_view.py
 Vista del menú principal de SafeCHECK.
 
 Muestra:
-  • Branding (SafeCHECK + INGELAM)
-  • 3 cards de navegación: Iniciar, Medidas de Seguridad, Acerca de Nosotros
+  • Branding de SafeCHECK
+  • 3 cards de navegación: Iniciar, Medidas de Seguridad, Acerca del proyecto
   • Footer con versión
 """
 
@@ -163,9 +163,9 @@ class HomeView(QWidget):
             description="Consulta las normas y protocolos de seguridad industrial del área de trabajo.",
         )
         self._card_about = _MenuCard(
-            icon="🏢",
-            title="Acerca de INGELAM",
-            description="Conoce más sobre la empresa, su misión, visión y líneas de negocio.",
+            icon="💡",
+            title="Acerca del Proyecto",
+            description="Qué hace SafeCHECK, cómo funciona por dentro y con qué tecnologías está hecho.",
         )
 
         cards_row.addWidget(self._card_start)
@@ -186,13 +186,13 @@ class HomeView(QWidget):
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(24, 0, 24, 0)
 
-        company_lbl = QLabel(CONFIG.COMPANY)
-        company_lbl.setObjectName("company-label")
+        author_lbl = QLabel(f"Proyecto personal · {CONFIG.AUTHOR}")
+        author_lbl.setObjectName("author-label")
 
         version_lbl = QLabel(f"v{CONFIG.APP_VERSION}")
         version_lbl.setObjectName("version-label")
 
-        footer_layout.addWidget(company_lbl)
+        footer_layout.addWidget(author_lbl)
         footer_layout.addStretch()
         footer_layout.addWidget(version_lbl)
 

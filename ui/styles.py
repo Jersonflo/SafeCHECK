@@ -2,13 +2,13 @@
 ui/styles.py
 =============
 Dark Theme profesional para SafeCHECK.
-Paleta de colores basada en la identidad de INGELAM (naranja #FF6100).
+Paleta oscura con acento naranja de seguridad industrial (#FF6100).
 
 Colores de referencia:
   BG_PRIMARY    #0D1117   Fondo principal
   BG_SECONDARY  #161B22   Fondo de cards/paneles
   BG_TERTIARY   #1F2937   Fondo de elementos internos
-  ACCENT        #FF6100   Naranja INGELAM
+  ACCENT        #FF6100   Naranja de seguridad
   ACCENT_HOVER  #E55500   Naranja oscuro (hover)
   SUCCESS       #22C55E   Verde (casco detectado)
   DANGER        #EF4444   Rojo (sin casco / alerta)
@@ -232,7 +232,7 @@ QLabel#version-label {{
     color: {TEXT_MUTED};
     font-size: 11px;
 }}
-QLabel#company-label {{
+QLabel#author-label {{
     color: {ACCENT};
     font-size: 12px;
     font-weight: bold;
@@ -288,5 +288,10 @@ QFrame#h-divider {{
 QFrame#toolbar {{
     background-color: {BG_SECONDARY};
     border-top: 1px solid {BORDER};
+}}
+/* Botones de la barra inferior: menos relleno vertical para que el texto quepa */
+QFrame#toolbar QPushButton#btn-secondary,
+QFrame#toolbar QPushButton#btn-danger {{
+    padding: 8px 22px;
 }}
 """

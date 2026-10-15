@@ -8,7 +8,7 @@ Implementa la navegación basada en QStackedWidget:
   - Index 1: LoadingView (Pantalla de carga/inicialización)
   - Index 2: CameraView (Monitoreo de cámaras en grilla)
   - Index 3: SafetyView (Medidas de seguridad)
-  - Index 4: AboutView (Acerca de nosotros)
+  - Index 4: AboutView (Acerca del proyecto)
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle(f"{CONFIG.APP_NAME} - {CONFIG.COMPANY}")
+        self.setWindowTitle(CONFIG.APP_NAME)
         self.resize(CONFIG.WINDOW_WIDTH, CONFIG.WINDOW_HEIGHT)
         self.setMinimumSize(800, 600)
 

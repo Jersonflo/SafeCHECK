@@ -134,7 +134,7 @@ class SafetyView(QWidget):
             icon="🩹",
             title="Botiquín y Primeros Auxilios",
             content="• Identifique de antemano el botiquín de emergencias más cercano a su estación.\n"
-                    "• Ante un incidente, mantenga la calma y de aviso inmediato al personal de brigada médica de la empresa.\n"
+                    "• Ante un incidente, mantenga la calma y de aviso inmediato al personal de brigada médica del sitio de trabajo.\n"
                     "• Evite suministrar medicamentos o tratamientos avanzados a un compañero lesionado a menos que cuente con certificación médica oficial.",
         )
 
@@ -164,7 +164,7 @@ class SafetyView(QWidget):
 
         back_btn = QPushButton("⬅  Regresar al Menú")
         back_btn.setObjectName("btn-secondary")
-        back_btn.setFixedHeight(38)
+        back_btn.setMinimumHeight(40)
         back_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         back_btn.clicked.connect(self.go_home)
 

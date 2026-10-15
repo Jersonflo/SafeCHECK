@@ -236,7 +236,7 @@ class CameraView(QWidget):
 
         stop_btn = QPushButton("⏹  Detener y volver al menú")
         stop_btn.setObjectName("btn-danger")
-        stop_btn.setFixedHeight(38)
+        stop_btn.setMinimumHeight(40)
         stop_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         stop_btn.clicked.connect(self._stop_and_go_home)
 

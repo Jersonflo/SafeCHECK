@@ -39,7 +39,6 @@ def main() -> None:
     # Crear la aplicación Qt
     app = QApplication(sys.argv)
     app.setApplicationName("SafeCHECK")
-    app.setOrganizationName("INGELAM")
     
     # Crear e iniciar la ventana principal
     window = MainWindow()

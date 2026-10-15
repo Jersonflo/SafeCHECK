@@ -2,7 +2,7 @@
 
 SafeCHECK es una aplicación de escritorio multiplataforma desarrollada en **Python** con **PyQt6** y **YOLOv8** para el monitoreo en tiempo real de seguridad laboral, detectando el uso correcto de cascos de seguridad industrial.
 
-Desarrollado para **INGELAM**.
+Proyecto personal de visión por computador aplicada a la seguridad industrial.
 
 ---
 
@@ -76,7 +76,8 @@ Puedes ajustar el comportamiento del sistema editando el archivo `config.py`:
 
 * **Sensibilidad de la detección:** Cambia `DETECTION_CONFIDENCE` (por defecto `0.55`) para hacer la detección de cascos más o menos estricta.
 * **Resolución de cámaras:** Configura `CAMERA_FRAME_WIDTH` y `CAMERA_FRAME_HEIGHT`.
-* **Frames Skip:** Si tu computadora es más antigua, puedes configurar `INFERENCE_SKIP_FRAMES` a `2` o `3` en `config.py` para procesar YOLO de manera alternada y ganar máxima fluidez sin perder alertas.
+* **Tamaño de inferencia:** `MODEL_IMGSZ` está en `416` para que funcione fluido en CPU. Súbelo a `640` si tienes GPU NVIDIA o si las personas aparecen lejos en la imagen.
+* **Frames Skip:** El video siempre se muestra en vivo y YOLO corre en un hilo aparte. Si quieres bajar el uso de CPU, sube `INFERENCE_SKIP_FRAMES` a `2` o `3`.
 
 ---
 

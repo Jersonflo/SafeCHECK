@@ -9,11 +9,10 @@ from __future__ import annotations
 
 import logging
 
-import cv2
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from config import CONFIG
-from core.camera_worker import CameraWorker
+from core.camera_worker import CameraWorker, open_camera
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,7 @@ class CameraDetectorWorker(QThread):
     def run(self) -> None:
         available: list[int] = []
         for index in range(CONFIG.MAX_CAMERAS):
-            cap = cv2.VideoCapture(index)
+            cap = open_camera(index)
             if cap.isOpened():
                 logger.info("Cámara disponible en índice %d", index)
                 available.append(index)

@@ -61,7 +61,7 @@ class ModelManager:
     Uso:
         manager = ModelManager.get_instance()
         manager.load()   # llamar una sola vez (bloqueante, corre en thread)
-        frame_ann, dets = manager.predict(frame, confidence=0.5)
+        dets = manager.detect(frame, confidence=0.5)
     """
 
     _instance: Optional[ModelManager] = None
@@ -74,6 +74,8 @@ class ModelManager:
                 cls._instance._model = None
                 cls._instance._is_loaded = False
                 cls._instance._device = "cpu"
+                # Un mismo modelo YOLO no es seguro entre hilos: serializar inferencias
+                cls._instance._predict_lock = threading.Lock()
 
                 # Auto-detectar GPU solo si hay suficiente memoria
                 # MPS en equipos con 8GB RAM puede causar problemas;
@@ -140,7 +142,7 @@ class ModelManager:
             dummy = np.zeros((240, 320, 3), dtype=np.uint8)
             self._model.predict(
                 dummy, verbose=False, device=self._device,
-                imgsz=CONFIG.MODEL_IMGSZ, half=use_half,
+                imgsz=CONFIG.MODEL_IMGSZ, **({"half": True} if use_half else {}),
             )
             self._is_loaded = True
             logger.info("Modelo cargado y listo (device=%s, half=%s).", self._device, use_half)
@@ -148,12 +150,12 @@ class ModelManager:
             logger.exception("Error al cargar el modelo: %s", exc)
             raise
 
-    def predict(
+    def detect(
         self,
         frame: np.ndarray,
         confidence: float = 0.50,
         imgsz: int = 320,
-    ) -> tuple[np.ndarray, list[Detection]]:
+    ) -> list[Detection]:
         """
         Ejecuta inferencia sobre un frame de cámara.
 
@@ -163,25 +165,25 @@ class ModelManager:
             imgsz: Tamaño de entrada del modelo para inferencia.
 
         Returns:
-            Tupla (frame_anotado_BGR, lista_de_detecciones).
-            Si el modelo no está cargado, retorna el frame original y lista vacía.
+            Lista de detecciones (vacía si el modelo no está cargado).
+            El dibujo de los recuadros lo hace el CameraWorker sobre el video en vivo.
         """
         if not self._is_loaded or self._model is None:
-            return frame, []
+            return []
 
         try:
             use_half = CONFIG.USE_HALF_PRECISION and self._device != "cpu"
-            results = self._model.predict(
-                frame,
-                conf=confidence,
-                verbose=False,
-                stream=False,
-                imgsz=imgsz,
-                device=self._device,
-                half=use_half,
-            )
+            with self._predict_lock:
+                results = self._model.predict(
+                    frame,
+                    conf=confidence,
+                    verbose=False,
+                    stream=False,
+                    imgsz=imgsz,
+                    device=self._device,
+                    **({"half": True} if use_half else {}),
+                )
             result = results[0]
-            annotated: np.ndarray = result.plot()  # frame con bboxes dibujados (BGR)
 
             detections: list[Detection] = []
             if result.boxes is not None:
@@ -198,8 +200,8 @@ class ModelManager:
                         )
                     )
 
-            return annotated, detections
+            return detections
 
         except Exception as exc:
-            logger.exception("Error en predict: %s", exc)
-            return frame, []
+            logger.exception("Error en detect: %s", exc)
+            return []

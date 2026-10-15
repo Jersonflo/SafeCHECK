@@ -19,7 +19,7 @@ class AppConfig:
     # ─── Aplicación ────────────────────────────────────────────────────────────
     APP_NAME: str = "SafeCHECK"
     APP_VERSION: str = "2.0"
-    COMPANY: str = "INGELAM"
+    AUTHOR: str = "Jerson Giraldo"
     WINDOW_WIDTH: int = 1280
     WINDOW_HEIGHT: int = 720
 
@@ -32,16 +32,18 @@ class AppConfig:
     DETECTION_CONFIDENCE: float = 0.55
 
     # ⚙️  TAMAÑO DE IMAGEN PARA INFERENCIA (ej. 320, 416, 640)
-    # Tu modelo fue entrenado a 640 — usar ese valor para máxima precisión.
-    # Puedes bajar a 416 si necesitas más velocidad sin perder mucha calidad.
-    MODEL_IMGSZ: int = 640
+    # El modelo fue entrenado a 640. En CPU, 416 es ~2x más rápido y pierde
+    # poca precisión a distancias de webcam. Sube a 640 si tienes GPU NVIDIA
+    # o si las personas aparecen lejos/pequeñas en la imagen.
+    MODEL_IMGSZ: int = 416
 
     # ⚙️  MEDIA PRECISIÓN (FP16) — solo funciona bien en CUDA (NVIDIA).
     # En MPS (Apple Silicon) puede causar problemas de detección, dejarlo en False.
     USE_HALF_PRECISION: bool = False
 
-    # ⚙️  SKIP DE FRAMES — corre inferencia cada N frames.
-    # En los frames intermedios se muestra el último resultado anotado.
+    # ⚙️  SKIP DE FRAMES — corre inferencia cada N frames disponibles.
+    # El video siempre se muestra en vivo con el último resultado dibujado;
+    # subir este valor solo reduce el uso de CPU.
     # Valor 1 = inferencia en cada frame (sin skip).
     # Valor 2 = inferencia cada 2 frames (buen balance).
     # Valor 3 = inferencia cada 3 frames (máxima fluidez).
@@ -49,7 +51,7 @@ class AppConfig:
 
     # ─── Cámaras ───────────────────────────────────────────────────────────────
     MAX_CAMERAS: int = 5          # Número máximo de cámaras a detectar
-    CAMERA_FPS_LIMIT: int = 15   # FPS máximos por cámara (reduce carga de CPU)
+    CAMERA_FPS_LIMIT: int = 30   # FPS máximos del video mostrado (la inferencia va a su ritmo)
     CAMERA_FRAME_WIDTH: int = 640
     CAMERA_FRAME_HEIGHT: int = 480
 

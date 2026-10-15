@@ -5,15 +5,19 @@ QThread dedicado por cámara.
 
 Cada CameraWorker:
   1. Abre la cámara por índice (cv2.VideoCapture)
-  2. Lee frames en un bucle controlado por FPS
-  3. Ejecuta inferencia YOLO (via ModelManager)
-  4. Emite la señal `frame_ready` con el frame anotado y las detecciones
+  2. FrameGrabber lee frames continuamente (sin acumular búfer)
+  3. InferenceThread corre YOLO sobre el frame más reciente, a su propio ritmo
+  4. El bucle principal emite `frame_ready` a la velocidad de la cámara,
+     dibujando sobre el video en vivo las últimas detecciones disponibles.
+     Así el video no se congela mientras el modelo procesa (en CPU tarda
+     ~150–300 ms por frame).
   5. Se detiene limpiamente con stop()
 """
 
 from __future__ import annotations
 
 import logging
+import sys
 import threading
 import time
 
@@ -25,6 +29,40 @@ from config import CONFIG
 from core.model_manager import Detection, ModelManager
 
 logger = logging.getLogger(__name__)
+
+def open_camera(index: int) -> cv2.VideoCapture:
+    """Abre una cámara por índice. En Windows usa DirectShow, que abre mucho más rápido que MSMF."""
+    if sys.platform == "win32":
+        return cv2.VideoCapture(index, cv2.CAP_DSHOW)
+    return cv2.VideoCapture(index)
+
+
+# Colores BGR de los recuadros (coinciden con la paleta de la UI)
+_COLOR_DANGER = (68, 68, 239)
+_COLOR_SAFE = (94, 197, 34)
+_COLOR_NEUTRAL = (158, 148, 139)
+
+
+def _draw_detections(frame: np.ndarray, detections: list[Detection]) -> np.ndarray:
+    """Dibuja recuadros y etiquetas de las detecciones sobre el frame (in-place)."""
+    for det in detections:
+        if det.is_violation:
+            color = _COLOR_DANGER
+        elif det.has_helmet:
+            color = _COLOR_SAFE
+        else:
+            color = _COLOR_NEUTRAL
+        x1, y1, x2, y2 = det.bbox
+        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+        label = f"{det.class_name} {det.confidence:.2f}"
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        ty = max(y1, th + 6)
+        cv2.rectangle(frame, (x1, ty - th - 6), (x1 + tw + 6, ty), color, -1)
+        cv2.putText(
+            frame, label, (x1 + 3, ty - 4),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA,
+        )
+    return frame
 
 
 class FrameGrabber(threading.Thread):
@@ -63,6 +101,49 @@ class FrameGrabber(threading.Thread):
         self.stopped = True
 
 
+class InferenceThread(threading.Thread):
+    """
+    Hilo daemon que corre YOLO continuamente sobre el frame más reciente
+    del FrameGrabber y guarda las últimas detecciones.
+    """
+
+    def __init__(self, grabber: FrameGrabber, model: ModelManager) -> None:
+        super().__init__()
+        self.grabber = grabber
+        self.model = model
+        self.detections: list[Detection] = []
+        self.stopped = False
+        self.lock = threading.Lock()
+        self.daemon = True
+
+    def run(self) -> None:
+        skip_n = max(1, CONFIG.INFERENCE_SKIP_FRAMES)
+        count = 0
+        while not self.stopped:
+            ret, frame = self.grabber.get_latest_frame()
+            if not ret or frame is None:
+                time.sleep(0.01)
+                continue
+            count += 1
+            if count % skip_n != 0:
+                time.sleep(0.03)
+                continue
+            detections = self.model.detect(
+                frame,
+                confidence=CONFIG.DETECTION_CONFIDENCE,
+                imgsz=CONFIG.MODEL_IMGSZ,
+            )
+            with self.lock:
+                self.detections = detections
+
+    def get_detections(self) -> list[Detection]:
+        with self.lock:
+            return list(self.detections)
+
+    def stop(self) -> None:
+        self.stopped = True
+
+
 class CameraWorker(QThread):
     """
     Thread de captura y detección para una cámara individual.
@@ -85,14 +166,15 @@ class CameraWorker(QThread):
         self._model = ModelManager.get_instance()
         self._frame_interval = 1.0 / CONFIG.CAMERA_FPS_LIMIT
         self._grabber = None
+        self._inference = None
 
     @property
     def camera_index(self) -> int:
         return self._camera_index
 
     def run(self) -> None:
-        """Bucle principal del thread: captura → inferencia (skip) → emit."""
-        cap = cv2.VideoCapture(self._camera_index)
+        """Bucle principal del thread: frame en vivo + últimas detecciones → emit."""
+        cap = open_camera(self._camera_index)
 
         if not cap.isOpened():
             logger.warning("No se pudo abrir la cámara %d", self._camera_index)
@@ -111,11 +193,11 @@ class CameraWorker(QThread):
         self._grabber = FrameGrabber(cap)
         self._grabber.start()
 
-        logger.info("Cámara %d iniciada con FrameGrabber.", self._camera_index)
+        # Inferencia en paralelo: el video no espera al modelo
+        self._inference = InferenceThread(self._grabber, self._model)
+        self._inference.start()
 
-        skip_n = max(1, CONFIG.INFERENCE_SKIP_FRAMES)
-        frame_count = 0
-        last_detections: list[Detection] = []
+        logger.info("Cámara %d iniciada con FrameGrabber + InferenceThread.", self._camera_index)
 
         try:
             while not self._stop_requested:
@@ -126,20 +208,9 @@ class CameraWorker(QThread):
                     time.sleep(0.01)
                     continue
 
-                frame_count += 1
-
-                if frame_count % skip_n == 0:
-                    # Frame de inferencia: correr YOLO
-                    annotated, detections = self._model.predict(
-                        frame,
-                        confidence=CONFIG.DETECTION_CONFIDENCE,
-                        imgsz=CONFIG.MODEL_IMGSZ,
-                    )
-                    last_detections = detections
-                    self.frame_ready.emit(self._camera_index, annotated, last_detections)
-                else:
-                    # Frame intermedio: emitir video crudo + últimas detecciones
-                    self.frame_ready.emit(self._camera_index, frame, last_detections)
+                detections = self._inference.get_detections()
+                annotated = _draw_detections(frame, detections)
+                self.frame_ready.emit(self._camera_index, annotated, detections)
 
                 # Limitar FPS: dormir el tiempo restante del intervalo
                 elapsed = time.monotonic() - start_time
@@ -151,6 +222,9 @@ class CameraWorker(QThread):
             logger.exception("Error inesperado en cámara %d: %s", self._camera_index, exc)
             self.camera_error.emit(self._camera_index, str(exc))
         finally:
+            if self._inference is not None:
+                self._inference.stop()
+                self._inference.join(timeout=2.0)
             if self._grabber is not None:
                 self._grabber.stop()
                 self._grabber.join(timeout=1.0)
@@ -160,6 +234,8 @@ class CameraWorker(QThread):
     def stop(self) -> None:
         """Solicita detención limpia del thread."""
         self._stop_requested = True
+        if self._inference is not None:
+            self._inference.stop()
         if self._grabber is not None:
             self._grabber.stop()
         self.wait(3000)  # espera hasta 3s para que termine limpiamente

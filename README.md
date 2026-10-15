@@ -20,7 +20,7 @@ Desarrollado para **INGELAM**.
 
 ## 🛠️ Requisitos Previos
 
-- **Python 3.10 o superior** (Recomendado: 3.10 o 3.11).
+- **Python 3.10 o 3.11** (las versiones más nuevas pueden no tener todavía paquetes de PyTorch/PyQt6).
 - Una cámara web integrada o externa conectada.
 
 ---
@@ -32,8 +32,8 @@ Sigue estos pasos para instalar y ejecutar el proyecto en cualquier sistema oper
 ### 1. Clonar el repositorio
 Si aún no has descargado el repositorio:
 ```bash
-git clone <URL_DEL_REPOSITORIO>
-cd ingelam2/SafeCHECK
+git clone https://github.com/Jersonflo/SafeCHECK.git
+cd SafeCHECK
 ```
 
 ### 2. Crear y activar un entorno virtual
@@ -91,3 +91,9 @@ Puedes ajustar el comportamiento del sistema editando el archivo `config.py`:
   - `views/`: Vistas de la app (Home, Carga, Grilla de cámaras, etc.).
   - `styles.py`: Hoja de estilos premium (QSS).
 * **`models/`**: Contiene el archivo de pesos del modelo YOLO (`best.pt`).
+
+---
+
+## 📄 Licencia
+
+Distribuido bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE).
